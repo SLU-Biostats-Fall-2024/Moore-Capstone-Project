@@ -1,0 +1,18 @@
+---
+title: "data exploration feedback"
+format: html
+editor: visual
+---
+
+## Data Exploration Feedback
+
+1.  Please name each .qmd file with something indicating what happens in the file, rather than as lastname-capstone-project. So this file might be data-exploration and you will have a separate .qmd file for each of your separate data analyses, so make sure those names have hints to what the files contain.
+2.  What is the "stray" file Moore-Capstone-Project (with no file extension) found in the Code folder? If it is not doing anything, you should get rid of it.
+3.  Line 15 - you are actually "activating" rather than downloading packages. We use `install.packages()` to download and install packages.
+4.  As I noted for your Problem Set 2 (both your specific and the general feedback), I'd like to see you do a better job of commenting your scientific thinking outside of code chunks. I need to be able to understand your train of thought, as does "future you". So when, for example, you run line 30 `glimpse()`, what do you learn? Write it down outside of code chunk.
+5.  Line 50 - I like that you are making a plot of what you are expecting, but I think you should begin with histograms of each of your continuous variables as well as boxplots which are better for identifying outliers. I see that you eventually made boxplots, but there are no histograms.
+6.  Line 57 - You did not create a box and whisker plot, nor is this a method that shows outliers.
+7.  Line 67 - you should add geom_point as a layer to your box plot to actually see the spread of the points. Same for line 71.
+8.  Just in terms of getting a sense of your data, you should probably have done a group_by(sex) and summarise and then plot some of the resulting vars to get a feel for the trends and variability in your data by sex.
+
+You have the right idea here, but need to work on refining the details.
