@@ -1,0 +1,430 @@
+---
+title: "Moore-Capstone-Final-Analysis"
+format: html
+editor: visual
+---
+
+# Introduction
+
+This data is from a study investigating the effect of climate on wild nestling superb fairy-wrens development as determined by telomere length. This study provides information that can be applied to research of the potential effects of climate change on species fitness. The data was collected in Australia by researchers from Monash University, French Research Institute for Exploitation of the Sea, University of Groningen, and Australian National University, and was published in 2023. It investigated cohorts of fairy wrens from 1996-2001. The data contains 343 rows with 22 columns.
+
+To prepare this data for analysis, the only thing that I had to do was change one variable (sex) to a factor variable. The data provided by the researchers was very clean and did not contain any mistakes that would have impeded upon a successful data analysis.
+
+In the following analysis, I looked at specifically the relationship between rainfall and telomere length (question 1), and then at a larger selection of variables to determine which of those had the most significant relationship with telomere length (question 2).
+
+# Question 1: Is there a relationship between rainfall amounts and telomere length?
+
+I am looking for a relationship between rainfall and telomere length, which are both ratio data. Since there is only one predictor variable, I will use a linear regression.
+
+## Hypothesis
+
+Null: There is no significant relationship between rainfall amounts and telomere length.
+
+Alternate: Rainfall amounts significantly impact telomeres length such that telomeres are shorter with less rainfall during nestling. This could be because telomeres shorten with environmental stress (Angelier et al., 2018), and dehydration is a major stressor that could impact developement (Bourne et al., 2021).
+
+### Setting up work space
+
+```{r}
+#Clearing R's environment
+rm (list = ls())
+```
+
+```{r}
+#Activating necessary packages
+library(tidyverse)
+library(ggfortify)
+library(here)
+```
+
+```{r}
+#Reading in data
+eastwood <- read.csv(here("Data", "Eastwood23_superb_climate_data_revised.csv"))
+```
+
+## Initial plot and guessing relationships
+
+#### Making a scatterplot as initial depiction of data.
+
+Making predictions off of this scatterplot can allow me to determine if there are any mistakes when I do my analysis. The summary statistics in the analysis should be similar to the ones estimated from the scatterplot.
+
+```{r}
+#Making a scatterplot
+ggplot(eastwood, aes(Rainfall.nestling, rTL)) + geom_point()
+```
+
+The telomere lengths range between 0.25-1.20, and the rainfall amounts range between 0-95. The slope should be about (1.2-.25)/(95-0) = 0.01. The y-intercept appears to be around 0.25. I do not expect there to be a significant relationship between telomere length and rainfall amounts. Also, there does not appear to be a relationship based just upon a visual evaluation of the graph.
+
+#### Making a histogram of telomere length to continue to visualize data
+
+```{r}
+ggplot(eastwood, aes(x = rTL)) + geom_histogram()
+```
+
+Looks to be relatively normally distributed -- no strong outliers or concerning shapes
+
+#### Making a histogram of rainfall to continue to visualize data
+
+```{r}
+ggplot(eastwood, aes(x = Rainfall.nestling)) + geom_histogram()
+```
+
+Data is skewed right-- there appears to be zero inflation. I recognize that this may skew the data, but I will still continue with a linear regression because it is the most reasonable test out of the ones we have learned.
+
+## Creating linear regression model
+
+```{r}
+#Creating model
+model_rainfall <- lm(rTL ~ Rainfall.nestling, data = eastwood)
+```
+
+## Checking model assumptions
+
+The residuals vs fitted plot should have no humps or valleys to assume that a linear model is appropriate for this data. In the Q-Q plot, the data should be linear to assume that the data is normally distributed. In the scale-location plot, there should be no pattern of points, so the line should be straight, to assume that there is constant variance. The residuals vs leverage plot detects points that have too much influence on the data set, such as outliers.
+
+```{r}
+#Checking assumptions
+autoplot(model_rainfall, smooth.color = NA)
+```
+
+The Q-Q plot looks good, but the residuals vs fitted, scale-location, and residuals vs leverage plots are not as linear as they should be. There are 4 points that might be skewing this data, but the reason that I did not remove them before was because these outliers did not show up on a boxplot in my data exploration stage (seperate file). Despite this, I still think that the data fits the assumptions for a linear model well enough.
+
+## Running and interpreting model
+
+#### Printing ANOVA results
+
+```{r}
+#ANOVA test
+anova(model_rainfall)
+```
+
+The F-statistic is 0.125 and the p-value is 0.7236, which does not indicate a significant relationship between rainfall amount and telomere length. The degrees of freedom + residuals + 1 should add up to the number of rows, which is the case because 1 + 341 + 1 = 343.
+
+#### Summary
+
+```{r}
+#Viewing results in a summary table
+summary(model_rainfall)
+```
+
+The adjusted R-squared is -0.002564. This value indicates that the variation in telomere length is not highly associated with rainfall amounts.
+
+## Making new figure
+
+```{r}
+ggplot(eastwood, aes(Rainfall.nestling, rTL))+
+     geom_point()+
+     geom_smooth(method = "lm")+
+     labs(x = "Rainfall during nestling phase", y = "Telomere length")+
+     theme_bw()
+```
+
+## Results
+
+Rainfall amount during the nestling phase for superb fairy wrens does not impact telomere length (F~1,341~ = 0.1253, p = 0.7236, adjusted R-squared = -0.002564). Since the p-value is greater than 0.05, I fail to reject the null hypothesis. I had hypothesised that telomeres would be shorter with less rainfall, but this effect was not shown in the analysis. It is possible that despite lower rainfall, the environment was still moist enough to provide adequate hydration and the effects of dehydration would only be seen in more extreme cases, as there was still some rainfall.
+
+# Question 2: What factor best predicts telomere length?
+
+I am looking at telomere length, which is ratio response data. I am interested in seeing which predictor variable best predicts telomere length, so I will use a multiple regression because this test allows for comparison among predictor variables. I am utilizing ratio and interval predictor variables in my analysis, but excluding categorical variables because there was not a way that I had learned to ensure that these samples were independent, and I did not want this to skew my analysis.
+
+## Hypothesis
+
+Null: There is no significant relationship between telomere length and any predictor variable in this study.
+
+Alternate: There is a significant relationship between telomere length and at least one predictor variable in this study. According to Angelier et al., 2018, environmental stressors shorten telomeres in vertebrates. Therefore, excessively hot or cold temperatures and extremely low or high rainfall could be associated with shorter telomeres. Additionally, telomeres shorten over time (Angelier et al., 2018), so older chicks may have shorter telomeres.
+
+### Setting up work space
+
+```{r}
+#Clearing R's environment
+rm (list = ls())
+```
+
+```{r}
+#Activating necessary packages
+library(tidyverse)
+library(ggfortify)
+library(Hmisc)
+library(GGally)
+library(corrplot)
+library(ggcorrplot)
+library(performance)
+library(broom)
+library(leaps)
+library(MASS)
+library(data.table)
+library(here)
+```
+
+```{r}
+#Reading in data. Specificing stringsAsFactors allows for character data to be loaded in as a factor, which is helpful for later analysis.
+eastwood <- read.csv(here("Data/Eastwood23_superb_climate_data_revised.csv"),  stringsAsFactors = T)
+```
+
+This data already consists of complete cases.
+
+## Making initial plots and predicting relationships
+
+#### Making a histogram as initial depiction of telomere length data
+
+Making predictions off of this histogram can allow me to determine if there are any mistakes when I do my analysis. The summary statistics in the analysis should be similar to the ones estimated from the histogram.
+
+```{r}
+ggplot(eastwood, aes(rTL)) + geom_histogram()
+```
+
+The telomere lengths range between 0.25-1.20 with a median of around 0.65. Telomere lengths appear to be normally distributed without strong outliers or any unusual shapes in the distribution. This is good because multiple linear regression requires normally distributed data.
+
+## Organizing predictor variables
+
+In order to check correlations between predictor variables to make sure they are independent, I will compare the correlation coefficients of the numerical predictor variables. I can not do this with categorical variables, so I will move them all to the left of my data frame so I can isolate the numeric variables. Columns 1-3 are just the row numbers and the bird identifiers, so I will ignore them, and column 4 is my response variable, so I will move categorical variables to the right of that. The variables at the end of the data set are also just for identification, so I will leave them there.
+
+```{r}
+eastwood <- eastwood %>% relocate(T35.nestling.yn, .after = rTL)
+eastwood <- eastwood %>% relocate(HatchMonth, .after = T35.nestling.yn)
+eastwood <- eastwood %>% relocate(Sex, .after = HatchMonth)
+eastwood <- eastwood %>% relocate(HelpersYesNo, .after = Sex)
+```
+
+The numeric variables are now in columns 9-18.
+
+#### Checking predictor correlations
+
+```{r}
+#Testing correlations and viewing as round for clarity
+cor_tests <- cor(eastwood[,9:18], method = "pearson")
+cor_tests <- round(cor_tests, 2)
+```
+
+#### Interpreting correlations
+
+```{r}
+#Checking statistical significance
+cor_tests_results <- rcorr(as.matrix(eastwood[,9:18]))
+
+#Flattening to understand results
+flattenCorrMatrix<-function(cormat,pmat){
+  ut<-upper.tri(cormat)
+  data.frame(
+    row = rownames (cormat)[row(cormat) [ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor = (cormat)[ut],
+    p = pmat[ut]
+  )
+}
+
+#Viewing pairwise correlations
+predictor_table <- flattenCorrMatrix(cor_tests_results$r, cor_tests_results$P)
+
+#Filtering out highly correlated (\>0.7) pairs
+highly_correlated <- predictor_table %>% filter(cor >= 0.7 | cor <= -0.7)
+View(highly_correlated)
+```
+
+The only variables that are highly correlated are three temperature variables: mean daily maximum temperature, mean daily minimum temperature, and mean daily maximum temperature over a 19-day period between 25 and 6 days prior to telomere measurement. I am going to keep just mean daily maximum temperature.
+
+#### Adjusting DF to separate highly correlated variables
+
+Moving highly correlated variables to left of DF to seperate from those that will be used in analysis
+
+```{r}
+eastwood <- eastwood %>% relocate(Tmin.nestling, .after = HelpersYesNo)
+eastwood <- eastwood %>% relocate(Tmax.pre, .after = Tmin.nestling)
+```
+
+The columns with possible predictor variables are now 11-18.
+
+#### Estimating predictor variables
+
+Viewing correlations between predictor variables and response variable and sorting the results so it is easy to see which correlation is the highest
+
+```{r}
+predictor_cors <- data.frame(cor(eastwood[,11:18], eastwood$rTL))
+predictor_cors <- predictor_cors %>% rename(correlation = cor.eastwood...11.18...eastwood.rTL.)
+predictor_cors %>% arrange(desc(correlation)) %>% View()
+```
+
+T35.nestling, aka the frequency of days \>=35C during the nestling phase has the highest correlation with relative telomere length (0.21), so I can predict that this variable will be in my regression model.
+
+Plotting relative telomere length and T35.nestling to get an idea of relationships.
+
+```{r}
+ggplot(eastwood, aes(T35.nestling, rTL)) + geom_point()
+```
+
+There appears to be zero inflation. I will plot the next most correlated variable, age, to see if it looks better.
+
+```{r}
+ggplot(eastwood, aes(ChickAge, rTL)) + geom_point()
+```
+
+This has less zero inflation and is possibly centered around the mean more.
+
+## Making multiple regression model
+
+Making a data frame with just the response variable and the predictor variables with appropriate correlations found above. I am only using numeric data in my analysis because I was unable to check the categorical data for independence, and I do not want it to skew my analysis should there be variables that are not independent. Since I have multiple numeric predictor variables as options, I do still think that there are enough options for a good multiple regression.
+
+```{r}
+#Moving response variable to left of predictors
+eastwood <- eastwood %>% relocate(rTL, .after = Tmax.pre)
+#Creating new DF
+cleaned_eastwood <- eastwood[c(10:18)]
+```
+
+#### Building best subsets regression
+
+```{r}
+all_subsets.mods <- regsubsets(cleaned_eastwood$rTL ~ ., data = cleaned_eastwood, nbest = 1)
+all_subsets.mods
+all_summary <-summary(all_subsets.mods)
+outmat<- as.data.frame(all_summary$outmat)
+all_summary$adjr2
+
+#Viewing as a figure to better understand results and visualize R2 values
+plot(all_subsets.mods, scale = "r2")
+```
+
+The model with 4 predictors has the highest R2 value.
+
+Using Mallow's Cp to compare models
+
+```{r}
+plot(all_summary$cp)
+plot(all_subsets.mods, scale = "Cp")
+```
+
+This is similar to the figure above.
+
+Plotting BIC
+
+```{r}
+plot(all_summary$bic)
+plot(all_subsets.mods, scale = "bic")
+```
+
+The best subsets model appears to have four predictors: T35.nestling, chick age, Tvar.nestling, and Tmax.nestling.
+
+#### Stepwise regression
+
+Defining models
+
+```{r}
+#Intercept only
+m.intercept_only <- glm(cleaned_eastwood$rTL ~ 1, data = cleaned_eastwood)
+
+#All predictors
+m.all.preds <- glm(cleaned_eastwood$rTL ~ ., data = cleaned_eastwood)
+```
+
+Stepwise regression
+
+```{r}
+m.stepwise <- step(m.intercept_only, direction = "both", scope = formula(m.all.preds))
+
+```
+
+This model suggests that the best model would have 2 predictors: T35.nestling and chick age, instead of 4 predictors.
+
+#### AIC stepwise
+
+Building full model
+
+```{r}
+full <- glm(rTL~ ., family = gaussian, data = cleaned_eastwood)
+summary(full)
+```
+
+StepAIC procedure
+
+```{r}
+step <- stepAIC(full, trace = F)
+step$anova
+```
+
+The final model uses Tmax.nestling, T35.nestling, Tvar.nestling, and chick age. This is the same as the the best subsets regression.
+
+#### Comparing models
+
+Although I created 3 models, the best subsets and stepwise AIC produced the same so I am combining that into one for the comparison.
+
+```{r}
+#Creating models
+mod_best_stepAIC <- lm(rTL ~ Tmax.nestling + T35.nestling + Tvar.nestling + ChickAge, data = cleaned_eastwood)
+
+mod_step <- lm(rTL ~ T35.nestling + ChickAge, data = cleaned_eastwood)
+
+#Comparing
+AIC(mod_best_stepAIC, mod_step)
+```
+
+The models have almost exactly the same AIC, so they are essentially equivalent, but I will compare their R2 to see if there is a difference there.
+
+```{r}
+performance(mod_best_stepAIC)
+performance(mod_step)
+```
+
+The model suggested by the best subsets regression and stepwise AIC regression has a higher adjusted R2, so I will use that as my final model.
+
+#### Final model
+
+```{r}
+final_mod <- lm(rTL ~ Tmax.nestling + T35.nestling + Tvar.nestling + ChickAge, data = cleaned_eastwood)
+```
+
+## Check model assumptions
+
+```{r}
+check_model(final_mod)
+```
+
+The observed data fits closely with the model-predicted data, so the model looks good.
+
+## Printing ANOVA results and viewing in a summary table
+
+```{r}
+anova(final_mod)
+summary(final_mod)
+```
+
+The overall model is significant (F = 6.966 with 4 and 388 df, p \< 0.05). There is significance with T35.nestling and chick age. Independently, telomere length is significantly related to Tmax.nestling, T35.nestling, and chick age.
+
+## Making final plot
+
+Putting results into data frames so they can be graphed
+
+```{r}
+#Making data frames
+coefs <- tidy(final_mod)
+ci <- data.table(confint(final_mod), keep.rownames = 'term')
+
+#Combining
+cidf <- cbind(coefs, ci)
+colnames(cidf)
+cidf <-cidf[,-6]
+cidf <-cidf %>% rename("lower" = "2.5 %", "upper" = "97.5 %")
+cidf$term <- as.factor(cidf$term)
+```
+
+Plotting confidence intervals for each term in the model
+
+```{r}
+ggplot(cidf, aes(estimate, term))+
+  geom_vline(xintercept = 0, linetype = 2)+
+  geom_point(size = 3)+
+  geom_errorbarh(aes(xmax = lower, xmin = upper), height = 0.2)+
+  theme_bw()
+```
+
+## Results
+
+Telomere length in superb fairy wrens is correlated with the frequency of days \>=35C during the nestling phase, the mean daily maximum temperature, the mean difference between daily maximum and minimum temperatures over the nestling period, and chick age overall (F~4,388~ = 6.966, p \< 0.05, adjusted R-squared = 0.06522). Since the p-value is less than 0.05, the null hypothesis is rejected. Telomere length was independently correlated with the frequency of days \>=35C during the nestling phase (F = 11.0585, p \< 0.05), the mean daily maximum temperature (F = 4.7007, p \< 0.05), and chick age (F = 9.8670, p \< 0.05). I had hypothesised that environmental stressors could be associated with shorter telomeres (Angelier et al., 2018). Longer telomeres with more days above 35 degrees C and higher mean maximum temperatures could indicate that fairy wrens develop better in warmer weather. I had also hypothesized that older chicks would have shorter telomeres due to degradation over time. However, older chicks ended up having longer telomeres. This could be because they have greater fitness overall, so they were more likely to survive longer through development, and the age measurements were only taken days apart so it may not have been enough time for telomeres to degrade.
+
+# Challenges
+
+Although we eventually did end up covering multiple regression analysis in lecture, I had tried to figure a little bit of it out on my own prior to the lesson. Something that took time for me to figure out was the interpretation of the different possible models (best subset, stepwise, AIC stepwise) and how I should interpret those outputs. Also, in my linear model, my predictor data had a great deal of zero inflation, so I had to learn about how that can impact an analysis.
+
+## References
+
+Angelier, F., Costantini, D., Blévin, P., & Chastel, O. (2018). Do glucocorticoids mediate the link between environmental conditions and telomere dynamics in wild vertebrates? A review. *General and comparative endocrinology*, *256*, 99–111. https://doi.org/10.1016/j.ygcen.2017.07.007
+
+Bourne, A. R., Ridley, A. R., McKechnie, A. E., Spottiswoode, C. N., & Cunningham, S. J. (2021). Dehydration risk is associated with reduced nest attendance and hatching success in a cooperatively breeding bird, the southern pied babbler *Turdoides bicolor*. *Conservation physiology*, *9*(1), coab043. https://doi.org/10.1093/conphys/coab043
